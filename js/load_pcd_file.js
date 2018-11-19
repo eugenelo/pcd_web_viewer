@@ -5,6 +5,8 @@
 
 function loadPCDFile(uri, transform, vertices, colors, progress, success)
 {
+	console.log("URI: " + uri);
+
 	// Collect some statistics during loading (useful for pointcloud coloring)
 	var stats = new Object();
 
@@ -108,9 +110,9 @@ function loadPCDFile(uri, transform, vertices, colors, progress, success)
 										// Special insane ROS pcd format
 										field.read = function(view, off) {
 											return new THREE.Color(
-												view.getUint8(off+0) / 255.0,
+												view.getUint8(off+2) / 255.0,
 												view.getUint8(off+1) / 255.0,
-												view.getUint8(off+2) / 255.0
+												view.getUint8(off+0) / 255.0
 											);
 										};
 									}
@@ -230,6 +232,7 @@ function loadPCDFile(uri, transform, vertices, colors, progress, success)
 			console.log(off, view.buffer.byteLength, numPoints, vertices.length);
 
 		vertices[numPoints] = vec;
+		// console.log(vec.x + ", " + vec.y + ", " + vec.z);
 
 		numPoints++;
 	}
@@ -310,7 +313,7 @@ function loadPCDFile(uri, transform, vertices, colors, progress, success)
 	}
 
 	// Start streaming
-	streamURI(getUrlParameter('load'), {
+	streamURI(uri, {
 		data: handleData,
 		success: success
 	});

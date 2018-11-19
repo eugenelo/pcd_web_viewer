@@ -43,10 +43,11 @@ function parseContentRange(str) {
 
 function streamURI(uri, options)
 {
+	console.log("STREAM URI: " + uri);
 	var filesize = 0;
 	var offset = 0;
 
-	var CHUNK = options.chunk || (150 * 1024); // 150k = 10240 points
+	var CHUNK = options.chunk || (1050 * 1024); // 150k = 10240 points
 
 	function handleRangeArrayBuffer(buffer, status, xhr) {
 		var contentRangeHeader = xhr.getResponseHeader('Content-Range');
@@ -81,11 +82,9 @@ function streamURI(uri, options)
 	if(typeof(fetch) == 'function' && typeof(ReadableByteStream) == 'function')
 	{
 		// Chrome
-
 		fetch(uri, {
 			method: 'GET',
-			mode: 'same-origin',
-			credentials: 'same-origin'
+			mode: 'cors',
 		}).then(function (response) {
 			if(response.headers.has('Content-Length'))
 				filesize = parseInt(response.headers.get('Content-Length'));

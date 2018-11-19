@@ -1,263 +1,279 @@
 
 // polyfill for String.endsWith
 if (!String.prototype.endsWith) {
-	String.prototype.endsWith = function(searchString, position) {
-		var subjectString = this.toString();
-		if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-			position = subjectString.length;
-		}
-		position -= searchString.length;
-		var lastIndex = subjectString.indexOf(searchString, position);
-		return lastIndex !== -1 && lastIndex === position;
-	};
+  String.prototype.endsWith = function(searchString, position) {
+    var subjectString = this.toString();
+    if (typeof position !== 'number' || !isFinite(position) ||
+        Math.floor(position) !== position || position > subjectString.length) {
+      position = subjectString.length;
+    }
+    position -= searchString.length;
+    var lastIndex = subjectString.indexOf(searchString, position);
+    return lastIndex !== -1 && lastIndex === position;
+  };
 }
 
 function viewer(container, options) {
 
-	var roll = options.roll || 0.0;
-	var pitch = options.pitch || 0.0;
-	var yaw = options.yaw || 0.0;
-	var pointSize = options.pointSize || 0.015;
+  var roll = options.roll || 0.0;
+  var pitch = options.pitch || 0.0;
+  var yaw = options.yaw || 0.0;
+  var pointSize = options.pointSize || 0.015;
 
-	// Build a color from a scalar value
-	function buildColor(v) {
-		var pi = 3.151592;
-		var r = Math.cos(v*2*pi + 0) * 0.5 + 0.5;
-		var g = Math.cos(v*2*pi + 2) * 0.5 + 0.5;
-		var b = Math.cos(v*2*pi + 4) * 0.5 + 0.5;
+  // Build a color from a scalar value
+  function buildColor(v) {
+    var pi = 3.151592;
+    var r = Math.cos(v * 2 * pi + 0) * 0.5 + 0.5;
+    var g = Math.cos(v * 2 * pi + 2) * 0.5 + 0.5;
+    var b = Math.cos(v * 2 * pi + 4) * 0.5 + 0.5;
 
-		return new THREE.Color(r, g, b);
-	}
+    return new THREE.Color(r, g, b);
+  }
 
-	var scene = null;
-	var renderer = null;
-	var camera = null;
+  var scene = null;
+  var renderer = null;
+  var camera = null;
 
-	// Draw the progressbar on the middle
-	var left = Math.round( (window.innerWidth - 400)/2 );
-	$("#progressbar-container").css("left",left + "px");
+  // Draw the progressbar on the middle
+  var left = Math.round((window.innerWidth - 400) / 2);
+  $("#progressbar-container").css("left", left + "px");
 
-	// Scene
-	scene = new THREE.Scene();
-	scene.fog = new THREE.FogExp2(0x000000, 0.0009);
+  // Scene
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 2000000, 2000000);
 
-	// Camera
-	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
-	camera.position.z = 8;
-	camera.up = new THREE.Vector3(0,0,1);
+  // Camera
+  var camera = new THREE.PerspectiveCamera(
+      60, window.innerWidth / window.innerHeight, 0.1, 2000000);
+  camera.position.set(-1550, -1025, -19);
+  camera.lookAt(scene.position);
+  camera.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
+  camera.up = new THREE.Vector3(0, 0, 1);
 
-	// Detect webgl support
-	if (!Detector.webgl) {
-		$("#progressbar-container").hide();
-		Detector.addGetWebGLMessage();
-		return;
-	}
+  var rayCaster = new THREE.Raycaster();
+  var mouse = new THREE.Vector2();
 
-	// The renderer
-	renderer = new THREE.WebGLRenderer();
-	renderer.setSize(window.innerWidth,window.innerHeight -4);
+  // Detect webgl support
+  if (!Detector.webgl) {
+    $("#progressbar-container").hide();
+    Detector.addGetWebGLMessage();
+    return;
+  }
 
-	// Render the scene
-	function render() {
-		renderer.render(scene, camera);
-	}
+  // The renderer
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight - 4);
 
-	// Setup controls
-	var controls = new THREE.OrbitControls( camera );
-	controls.rotateSpeed = 1.0;
-	controls.zoomSpeed = 10.2;
-	controls.panSpeed = 0.8;
-	controls.enableDamping = true;
-	controls.dampingFactor = 0.3;
-	controls.keys = [65, 17, 18];
-	controls.addEventListener('change', render);
+  // Render the scene
+  function render() {
+    renderer.render(scene, camera);
+    console.log(camera);
+  }
 
-	var geometry = new THREE.SphereGeometry( 0.1, 32, 32 );
-	var material = new THREE.MeshBasicMaterial({
-		color: 0xffff00,
-		transparent: true,
-		opacity: 0.5
-	});
-	controls.visualizer = new THREE.Mesh( geometry, material );
-	scene.add( controls.visualizer );
+  // Setup controls
+  var controls = new THREE.OrbitControls(camera);
+  // controls.target.set(camera.position.x, camera.position.y,
+  // camera.position.z); controls.target = camera.position.clone();
+  controls.rotateSpeed = 0.2;
+  controls.zoomSpeed = 1.0;
+  controls.panSpeed = 0.2;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.3;
+  controls.enableKeys = true;
+  controls.keys = [ 65, 17, 18 ];
+  controls.addEventListener('change', render);
 
-	controls.visualizer.visible = false;
+  var geometry = new THREE.SphereGeometry(0.1, 32, 32);
+  var material = new THREE.MeshBasicMaterial({
+    color : 0xffff00,
+    transparent : true,
+    opacity : 1.0,
+    side : THREE.DoubleSide,
+  });
+  controls.visualizer = new THREE.Mesh(geometry, material);
+  scene.add(controls.visualizer);
 
+  controls.visualizer.visible = false;
 
-	// Render loop
-	function animate() {
-		requestAnimationFrame(animate);
-		controls.update();
-	}
+  // Render loop
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+  }
 
-	// Init the geometry
-	var geometry = new THREE.Geometry();
-	var material = new THREE.PointsMaterial({size:pointSize, vertexColors:true});
-	var pointcloud = new THREE.Points(geometry, material);
-	scene.add(pointcloud);
+  // Init the geometry
+  var geometry = new THREE.Geometry();
+  var material =
+      new THREE.PointsMaterial({size : pointSize, vertexColors : true});
+  var pointcloud = new THREE.Points(geometry, material);
+  scene.add(pointcloud);
 
-	// Add the canvas, render and animate
-	console.log(container);
-	container.append(renderer.domElement);
+  // Add the canvas, render and animate
+  console.log(container);
+  container.append(renderer.domElement);
 
-	// Load the pointcloud
-	var colors = {
-		x: {
-			data: [],
-			valid: 0
-		},
-		y: {
-			data: [],
-			valid: 0
-		},
-		z: {
-			data: [],
-			valid: 0
-		},
-		rgb: {
-			data: [],
-			valid: 0
-		}
-	};
+  // Load the pointcloud
+  var colors = {
+    x : {data : [], valid : 0},
+    y : {data : [], valid : 0},
+    z : {data : [], valid : 0},
+    rgb : {data : [], valid : 0}
+  };
 
-	var cname = getUrlParameter('color');
-	if(cname == undefined)
-		cname = 'rgb';
+  var cname = getUrlParameter('color');
+  if (cname == undefined)
+    cname = 'rgb';
 
-	function recomputeColorChannel(name, stats, numPoints) {
-		stats = stats[name];
-		var data = colors[name].data;
+  function recomputeColorChannel(name, stats, numPoints) {
+    stats = stats[name];
+    var data = colors[name].data;
 
-		if(stats.min >= stats.max)
-		{
-			// Extend to vertices.length
-			for(var i = data.length; i < geometry.vertices.length; ++i)
-				data[i] = new THREE.Color(0.87, 0.87, 0.87);
+    if (stats.min >= stats.max) {
+      // Extend to vertices.length
+      for (var i = data.length; i < geometry.vertices.length; ++i)
+        data[i] = new THREE.Color(0.87, 0.87, 0.87);
 
-			return;
-		}
+      return;
+    }
 
-		var start = stats.dirty ? 0 : colors[name].valid;
-		if(stats.dirty)
-			console.log('color channel dirty');
+    var start = stats.dirty ? 0 : colors[name].valid;
+    if (stats.dirty)
+      console.log('color channel dirty');
 
-		for (var i=start; i < numPoints; i++)
-		{
-			var z = geometry.vertices[i][name];
-			t = (z-stats.min)/(stats.max-stats.min);
-			if(isNaN(t))
-			{
-				data[i] = new THREE.Color(0);
-				continue;
-			}
-			data[i] = buildColor(t);
-		}
+    for (var i = start; i < numPoints; i++) {
+      var z = geometry.vertices[i][name];
+      t = (z - stats.min) / (stats.max - stats.min);
+      if (isNaN(t)) {
+        data[i] = new THREE.Color(0);
+        continue;
+      }
+      data[i] = buildColor(t);
+    }
 
-		// Extend to vertices.length
-		for(var i = numPoints; i < geometry.vertices.length; ++i)
-			data[i] = new THREE.Color(0.87, 0.87, 0.87);
+    // Extend to vertices.length
+    for (var i = numPoints; i < geometry.vertices.length; ++i)
+      data[i] = new THREE.Color(0.87, 0.87, 0.87);
 
-		colors[name].valid = numPoints;
-	};
+    colors[name].valid = numPoints;
+  };
 
-	// Changes the color of the points
-	function changeColor(color_mode)
-	{
-		console.log('Switching to color mode', color_mode);
+  // Changes the color of the points
+  function changeColor(color_mode) {
+    console.log('Switching to color mode', color_mode);
 
-		if(colors[color_mode].valid != geometry.vertices.length)
-		{
-			recomputeColorChannel(color_mode, finalStats, geometry.vertices.length);
-		}
+    if (colors[color_mode].valid != geometry.vertices.length) {
+      recomputeColorChannel(color_mode, finalStats, geometry.vertices.length);
+    }
 
-		pointcloud.geometry.colors = colors[color_mode].data;
-		pointcloud.geometry.colorsNeedUpdate = true;
-	}
+    pointcloud.geometry.colors = colors[color_mode].data;
+    pointcloud.geometry.colorsNeedUpdate = true;
+  }
 
-	// Handle colors and pointsize
-	function onKeyDown(evt) {
-		// Increase/decrease point size
-		if (evt.keyCode == 189 || evt.keyCode == 109 || evt.keyCode == 173)
-		{
-			pointcloud.material.size -= 0.003;
-			pointcloud.material.needsUpdate = true;
-		}
+  function onMouseMove(evt) {
+    // calculate mouse position in normalized device coordinates
+    // (-1 to +1) for both components
+    mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(evt.clientY / window.innerHeight) * 2 + 1;
+  }
 
-		if (evt.keyCode == 187 || evt.keyCode == 107 || evt.keyCode == 171)
-		{
-			pointcloud.material.size += 0.003;
-			pointcloud.material.needsUpdate = true;
-		}
+  // Handle colors and pointsize
+  function onKeyDown(evt) {
+    // Increase/decrease point size
+    if (evt.keyCode == 189 || evt.keyCode == 109 || evt.keyCode == 173) {
+      pointcloud.material.size -= 0.003;
+      pointcloud.material.needsUpdate = true;
+    }
 
-		if (evt.keyCode == 49) changeColor('x');
-		if (evt.keyCode == 50) changeColor('y');
-		if (evt.keyCode == 51) changeColor('z');
-		if (evt.keyCode == 52) changeColor('rgb');
+    if (evt.keyCode == 187 || evt.keyCode == 107 || evt.keyCode == 171) {
+      pointcloud.material.size += 0.003;
+      pointcloud.material.needsUpdate = true;
+    }
 
-		render();
-	}
+    if (evt.keyCode == 49)
+      changeColor('x');
+    if (evt.keyCode == 50)
+      changeColor('y');
+    if (evt.keyCode == 51)
+      changeColor('z');
+    if (evt.keyCode == 52)
+      changeColor('rgb');
+    if (evt.keyCode == 70) {
+      console.log("Mouse position: " + mouse.x + ", " + mouse.y);
 
-	var bufferSize = 0;
-	var finalStats = null;
+      rayCaster.setFromCamera(mouse, camera);
+      var intersections = rayCaster.intersectObjects([ pointcloud ]);
+      console.log(intersections);
+      if (intersections.length > 0) {
+        console.log(intersections[0].point);
+        controls.target = intersections[0].point;
+        controls.update();
+      }
+      console.log("Camera Position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
+    }
 
-	var load = null;
-	var filename = options.filename;
-	if(filename.endsWith('.pcd'))
-		load = loadPCDFile;
-	else
-		load = loadBinFile;
+    render();
+  }
 
-	var transform = new THREE.Matrix4();
+  var bufferSize = 0;
+  var finalStats = null;
 
-	var euler = new THREE.Euler(roll, pitch, yaw, 'XYZ');
-	transform.makeRotationFromEuler(euler);
+  var load = null;
+  var filename = options.filename;
+  console.log("filename: " + filename);
+  if (filename.endsWith('.pcd')) {
+    load = loadPCDFile;
+  } else {
+    load = loadBinFile;
+  }
 
-	load(filename, transform, geometry.vertices, colors['rgb'].data,
-		function(stats, numPoints) {
-			colors['rgb'].valid = numPoints;
-			finalStats = stats;
+  var transform = new THREE.Matrix4();
 
-			if(cname != 'rgb')
-				recomputeColorChannel(cname, stats, numPoints);
+  var euler = new THREE.Euler(roll, pitch, yaw, 'XYZ');
+  transform.makeRotationFromEuler(euler);
 
-			console.log('progress', numPoints);
+  load(filename, transform, geometry.vertices, colors['rgb'].data,
+       function(stats, numPoints) {
+         colors['rgb'].valid = numPoints;
+         finalStats = stats;
 
-			// If the geometry buffer size changed, we need to
-			// recreate the geometry.
-			if(geometry.vertices.length != bufferSize) {
-				scene.remove(pointcloud);
-				pointcloud.geometry.dispose();
-				pointcloud.material.dispose();
+         if (cname != 'rgb')
+           recomputeColorChannel(cname, stats, numPoints);
 
-				var vertices = geometry.vertices;
+         console.log('progress', numPoints);
 
-				geometry = new THREE.Geometry();
-				geometry.dynamic = true;
-				geometry.vertices = vertices;
-				geometry.colors = colors[cname].data;
+         // If the geometry buffer size changed, we need to
+         // recreate the geometry.
+         if (geometry.vertices.length != bufferSize) {
+           scene.remove(pointcloud);
+           pointcloud.geometry.dispose();
+           pointcloud.material.dispose();
 
-				pointcloud = new THREE.Points(geometry, material);
-				scene.add(pointcloud);
-			}
-			else
-			{
-				geometry.verticesNeedUpdate = true;
-				geometry.colorsNeedUpdate = true;
-			}
+           var vertices = geometry.vertices;
 
-			bufferSize = geometry.vertices.length;
+           geometry = new THREE.Geometry();
+           geometry.dynamic = true;
+           geometry.vertices = vertices;
+           geometry.colors = colors[cname].data;
 
-			render();
-		},
-		function() {
-			// Remove the progressbar
-			$("#progressbar-container").hide();
-			$("#controls-browser").show();
+           pointcloud = new THREE.Points(geometry, material);
+           scene.add(pointcloud);
+         } else {
+           geometry.verticesNeedUpdate = true;
+           geometry.colorsNeedUpdate = true;
+         }
 
-			document.addEventListener("keydown", onKeyDown, false);
-		}
-	);
+         bufferSize = geometry.vertices.length;
 
-	render();
-	animate();
+         render();
+       },
+       function() {
+         // Remove the progressbar
+         $("#progressbar-container").hide();
+         $("#controls-browser").show();
+
+         document.addEventListener("keydown", onKeyDown, false);
+         document.addEventListener('mousemove', onMouseMove, false);
+       });
+  render();
+  animate();
 }
